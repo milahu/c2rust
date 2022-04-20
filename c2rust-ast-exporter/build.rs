@@ -93,6 +93,29 @@ fn generate_bindings() -> Result<(), &'static str> {
         // Tell bindgen we are processing c++
         .clang_arg("-xc++")
         .clang_arg("-std=c++11")
+
+        /*
+        // fix glibc: warning _FORTIFY_SOURCE requires compiling with optimization (-O)
+        .clang_arg("-O")
+        */
+
+        // help bindgen to find header files
+        // https://github.com/rust-lang/rust-bindgen/issues/1834
+
+        // c2rust/c2rust-ast-exporter/src/ExportResult.hpp:11:10: fatal error: 'algorithm' file not found
+        .clang_arg(format!("-I{}/c++/v1", env::var("LIBCXX_INCLUDE_DIR").unwrap()))
+
+        // /nix/store/hzlq2g5man7zi3xr9165gz39ccxxray2-libcxx-11.1.0-dev/include/c++/v1/__config:256:12: fatal error: 'features.h' file not found
+        .clang_arg(format!("-I{}", env::var("GLIBC_INCLUDE_DIR").unwrap()))
+
+        // /nix/store/hzlq2g5man7zi3xr9165gz39ccxxray2-libcxx-11.1.0-dev/include/c++/v1/cstddef:44:15: fatal error: 'stddef.h' file not found
+        .clang_arg(format!("-I{}", env::var("LIBC_INCLUDE_DIR").unwrap()))
+
+        /*
+        // error: could not find native static library `tinycbor`, perhaps an -L flag is missing?
+        //.clang_arg(format!("-L{}", env::var("TINYCBOR_LIB_DIR").unwrap()))
+        */
+
         // Finish the builder and generate the bindings.
         .generate()
         .or(Err("Unable to generate ExportResult bindings"))?;
